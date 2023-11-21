@@ -1,14 +1,12 @@
-import polars as pl
-
 from random import sample
 from typing import List
 
-from fastapi import APIRouter, FastAPI, Request, HTTPException
+import polars as pl
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 from service.api.exceptions import UserNotFoundError
 from service.log import app_logger
-
 
 data = pl.read_csv("data/items.csv")
 
