@@ -1,11 +1,12 @@
 from random import sample
-from typing import List
+from typing import Any, Dict, List, Union
 
 import polars as pl
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from service.api.exceptions import UserNotFoundError
+from service.api.exceptions import BearerAccessTokenError, UserNotFoundError
 from service.log import app_logger
 
 data = pl.read_csv("data/items.csv")
@@ -16,7 +17,14 @@ class RecoResponse(BaseModel):
     items: List[int]
 
 
+responses: Dict[Union[int, str], Dict[str, Any]] = {
+    404: {"description": "Model not found", "content": {"application/json": {"example": {"detail": "Model not found"}}}}
+}
+
+
 router = APIRouter()
+
+bearer_scheme = HTTPBearer()
 
 
 @router.get(
@@ -31,14 +39,18 @@ async def health() -> str:
     path="/reco/{model_name}/{user_id}",
     tags=["Recommendations"],
     response_model=RecoResponse,
-    responses={404: {"description": "Model not found"}},
+    responses=responses,
 )
 async def get_reco(
     request: Request,
     model_name: str,
     user_id: int,
+    token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> RecoResponse:
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
+
+    if token.credentials != request.app.state.true_token:
+        raise BearerAccessTokenError()
 
     if model_name != "random":
         raise HTTPException(status_code=404, detail="Model not found")
