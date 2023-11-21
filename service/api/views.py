@@ -42,6 +42,9 @@ async def get_reco(
 ) -> RecoResponse:
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
+    if model_name != "random":
+        raise HTTPException(status_code=404, detail="Model not found")
+
     if user_id > 10**9:
         raise UserNotFoundError(error_message=f"User {user_id} not found")
 
