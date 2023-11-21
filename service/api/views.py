@@ -1,10 +1,16 @@
+import polars as pl
+
+from random import sample
 from typing import List
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request, HTTPException
 from pydantic import BaseModel
 
 from service.api.exceptions import UserNotFoundError
 from service.log import app_logger
+
+
+data = pl.read_csv("data/items.csv")
 
 
 class RecoResponse(BaseModel):
@@ -27,6 +33,7 @@ async def health() -> str:
     path="/reco/{model_name}/{user_id}",
     tags=["Recommendations"],
     response_model=RecoResponse,
+    responses={404: {"description": "Model not found"}},
 )
 async def get_reco(
     request: Request,
@@ -35,13 +42,17 @@ async def get_reco(
 ) -> RecoResponse:
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
-    # Write your code here
-
     if user_id > 10**9:
         raise UserNotFoundError(error_message=f"User {user_id} not found")
 
     k_recs = request.app.state.k_recs
-    reco = list(range(k_recs))
+
+    item_ids = data["item_id"].to_list()
+    if len(item_ids) < k_recs:
+        reco = item_ids
+    else:
+        reco = sample(item_ids, k_recs)
+
     return RecoResponse(user_id=user_id, items=reco)
 
 
