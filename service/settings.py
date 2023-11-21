@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Config(BaseSettings):
-    model_config = SettingsConfigDict(case_sensitive=False)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="allow")
 
 
 class LogConfig(Config):
@@ -14,7 +14,7 @@ class LogConfig(Config):
 class ServiceConfig(Config):
     service_name: str = "reco_service"
     k_recs: int = 10
-
+    token: str = "secret"
     log_config: LogConfig
 
 
