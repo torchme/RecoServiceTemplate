@@ -18,3 +18,4 @@
 - Разобрался с cloudflare
 - Попробовал nginx
 - Добавил prehooks
+- Попробовал github actions
