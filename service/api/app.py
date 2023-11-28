@@ -35,6 +35,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
 
     app = FastAPI(debug=False)
     app.state.k_recs = config.k_recs
+    app.state.true_token = config.token
 
     add_views(app)
     add_middlewares(app)
