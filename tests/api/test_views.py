@@ -23,8 +23,8 @@ def test_get_reco_success(
     client: TestClient,
     service_config: ServiceConfig,
 ) -> None:
-    user_id = 123
-    path = GET_RECO_PATH.format(model_name="random", user_id=user_id)
+    user_id = 2
+    path = GET_RECO_PATH.format(model_name="ann", user_id=user_id)
     with client:
         response = client.get(path, headers={"Authorization": CORRECT_AUTH})
     assert response.status_code == HTTPStatus.OK

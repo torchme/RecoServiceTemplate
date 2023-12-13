@@ -1,7 +1,8 @@
-from random import sample
+import os
+import pickle
+import sys
 from typing import Any, Dict, List, Union
 
-import polars as pl
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
@@ -9,7 +10,22 @@ from pydantic import BaseModel
 from service.api.exceptions import BearerAccessTokenError, UserNotFoundError
 from service.log import app_logger
 
-data = pl.read_csv("data/items.csv")
+LFM_PATH = os.path.join(sys.path[0], "data/lfm_recs.pkl")
+ANN_PATH = os.path.join(sys.path[0], "models/ann_lightfm.pkl")
+COLD_USERS_PATH = os.path.join(sys.path[0], "models/cold_users.pkl")
+POPULAR = os.path.join(sys.path[0], "models/popular.pkl")
+
+with open(LFM_PATH, "rb") as file:
+    lfm_model = pickle.load(file)
+
+with open(ANN_PATH, "rb") as file:
+    ann_model = pickle.load(file)
+
+with open(COLD_USERS_PATH, "rb") as file:
+    cold_users = pickle.load(file)
+
+with open(POPULAR, "rb") as file:
+    popular_items = pickle.load(file)
 
 
 class RecoResponse(BaseModel):
@@ -51,20 +67,31 @@ async def get_reco(
 
     if token.credentials != request.app.state.true_token:
         raise BearerAccessTokenError()
-
-    if model_name != "random":
-        raise HTTPException(status_code=404, detail="Model not found")
-
     if user_id > 10**9:
         raise UserNotFoundError(error_message=f"User {user_id} not found")
 
     k_recs = request.app.state.k_recs
 
-    item_ids = data["item_id"].to_list()
-    if len(item_ids) < k_recs:
-        reco = item_ids
+    if model_name == "ann":
+        if user_id in cold_users:
+            reco = list(ann_model.get_item_list_for_user(user_id, top_n=k_recs))
+            if not reco:
+                reco = popular_items
+            elif len(reco) < k_recs:
+                reco = list(reco + popular_items)[:k_recs]
+        else:
+            reco = popular_items
+    elif model_name == "lfm":
+        if user_id in cold_users:
+            reco = lfm_model[user_id]
+            if not reco:
+                reco = popular_items
+            elif len(reco) < k_recs:
+                reco = list(reco + popular_items)[:k_recs]
+        else:
+            reco = popular_items
     else:
-        reco = sample(item_ids, k_recs)
+        raise HTTPException(status_code=404, detail="Model not found")
 
     return RecoResponse(user_id=user_id, items=reco)
 

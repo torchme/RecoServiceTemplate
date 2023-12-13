@@ -70,3 +70,4 @@ venv.bak/
 *.csv
 *.pickle
 *.parquet
+*.pkl
