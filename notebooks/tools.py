@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Set, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
 import numpy as np
 from lightfm import LightFM
@@ -6,21 +6,21 @@ from scipy.sparse import csr_matrix
 
 
 def generate_lightfm_recs_mapper(
-    model: LightFM, 
-    N: int, 
+    model: LightFM,
+    N: int,
     item_iids: List[int],  # iid - internal lfm id
-    user_id_to_iid: Dict[int, int], 
-    item_iid_to_id: Dict[int, int], 
+    user_id_to_iid: Dict[int, int],
+    item_iid_to_id: Dict[int, int],
     known_item_ids: Dict[int, Set[int]],
-    user_features:  Optional[csr_matrix] = None, 
-    item_features: Optional[csr_matrix] = None, 
+    user_features:  Optional[csr_matrix] = None,
+    item_features: Optional[csr_matrix] = None,
     num_threads: int = 1,
 ) -> Callable:
     """Возвращает функцию для генерации рекомендаций в формате item_ids, scores"""
     def _recs_mapper(user):
         # Предикт для одного юзера
         user_id = user_id_to_iid[user]
-        # Получаем список скоров. index - соответствует внутренним 
+        # Получаем список скоров. index - соответствует внутренним
         # индексам lightfm для айтемов т.е. ключам из item_iid_to_id
         scores_vector = model.predict(user_id, item_iids, user_features=user_features,
                              item_features=item_features, num_threads=num_threads)
