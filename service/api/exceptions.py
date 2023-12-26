@@ -26,3 +26,14 @@ class UserNotFoundError(AppException):
         error_loc: tp.Optional[tp.Sequence[str]] = None,
     ):
         super().__init__(status_code, error_key, error_message, error_loc)
+
+
+class BearerAccessTokenError(AppException):
+    def __init__(
+        self,
+        status_code: int = HTTPStatus.UNAUTHORIZED,
+        error_key: str = "bearer_access_token_error",
+        error_message: str = "Bearer access token is invalid",
+        error_loc: tp.Optional[tp.Sequence[str]] = None,
+    ):
+        super().__init__(status_code, error_key, error_message, error_loc)
